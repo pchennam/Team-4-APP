@@ -16,77 +16,55 @@
 
   <body class="dashboard-page">
     <!-- Sidebar -->
-    <!-- <aside class="sidebar" id="sidebar">
-      <div class="logo"><i class="bx bx-cube-alt"></i></div>
+<aside class="sidebar" id="sidebar">
+  <div class="logo"><i class="bx bx-cube-alt"></i></div>
 
-      <nav class="menu">
-        <h1 class="menu-header">Menu</h1>
+  <nav class="menu">
+    <h1 class="menu-header">Menu</h1>
 
-        <div class="menu-item nav-active" data-tooltip="Dashboard">
-          <i class="bx bx-home-smile"></i><span>Dashboard</span>
-        </div>
+    <div class="menu-item" data-link="dashboard" data-tooltip="Dashboard">
+      <i class="bx bx-home-smile"></i>
+      <a href="/dashboard" style="text-decoration:none;color:inherit">
+        <span>Dashboard</span>
+      </a>
+    </div>
 
-        <div class="menu-item" data-tooltip="Income">
-          <i class="bx bx-bar-chart-alt-2"></i>
-          <a href="/income" style="text-decoration:none;color:inherit"><span>Income</span></a>
-        </div>
+    <div class="menu-item" data-link="income" data-tooltip="Income">
+      <i class="bx bx-bar-chart-alt-2"></i>
+      <a href="/income" style="text-decoration:none;color:inherit">
+        <span>Income</span>
+      </a>
+    </div>
 
-        <div class="menu-item" data-tooltip="Report">
-          <i class="bx bx-line-chart"></i><span>Report</span>
-        </div>
+    <div class="menu-item" data-link="expense" data-tooltip="Expense">
+      <i class="bx bx-cart"></i>
+      <a href="/expense" style="text-decoration:none;color:inherit">
+        <span>Expense</span>
+      </a>
+    </div>
 
-        <div class="menu-item" data-tooltip="Settings">
-          <i class="bx bx-cog"></i><span>Settings</span>
-        </div>
+    <!-- ⭐ NEW ITEM: Budget Tracker -->
+    <div class="menu-item" data-link="budget-tracker" data-tooltip="Budget Tracker">
+      <i class="bx bx-category-alt"></i>
+      <a href="/budget-tracker" style="text-decoration:none;color:inherit">
+        <span>Budget Tracker</span>
+      </a>
+    </div>
 
-        <h1 class="menu-header shortcuts">Shortcuts</h1>
-        <div class="menu-item" data-tooltip="Add"><i class="bx bx-add-to-queue"></i><span>Add</span></div>
-        <div class="menu-item" data-tooltip="Remove"><i class="bx bx-message-square-minus"></i><span>Remove</span></div>
-      </nav>
+    <!-- Existing Budget Report -->
+    <div class="menu-item" data-link="report" data-tooltip="Budget Report">
+      <i class="bx bx-line-chart"></i>
+      <a href="/report" style="text-decoration:none;color:inherit">
+        <span>Budget Report</span>
+      </a>
+    </div>
+  </nav>
 
-      <div class="logout" data-tooltip="Logout">
-        <i class="bx bx-log-out"></i><span>Logout</span>
-      </div>
-    </aside> -->
-    <aside class="sidebar" id="sidebar">
-      <div class="logo"><i class="bx bx-cube-alt"></i></div>
-      
-      <nav class="menu">
-        <h1 class="menu-header">Menu</h1>
-        
-        <div class="menu-item" data-link="dashboard" data-tooltip="Dashboard">
-          <i class="bx bx-home-smile"></i>
-          <a href="/dashboard" style="text-decoration:none;color:inherit">
-            <span>Dashboard</span>
-          </a>
-        </div>
-        
-        <div class="menu-item" data-link="income" data-tooltip="Income">
-          <i class="bx bx-bar-chart-alt-2"></i>
-          <a href="/income" style="text-decoration:none;color:inherit">
-            <span>Income</span>
-          </a>
-        </div>
-        
-        <div class="menu-item" data-link="expense" data-tooltip="Expense">
-          <i class="bx bx-cart"></i>
-          <a href="/expense" style="text-decoration:none;color:inherit">
-            <span>Expense</span>
-          </a>
-        </div>
-        
-        <div class="menu-item" data-link="report" data-tooltip="Budget Report">
-          <i class="bx bx-line-chart"></i>
-          <a href="/report" style="text-decoration:none;color:inherit">
-            <span>Budget Report</span>
-          </a>
-        </div>
-      </nav>
-      
-      <div class="logout" data-tooltip="Logout" id="logoutLink">
-        <i class="bx bx-log-out"></i><span>Logout</span>
-      </div>
-    </aside>
+  <div class="logout" data-tooltip="Logout" id="logoutLink">
+    <i class="bx bx-log-out"></i><span>Logout</span>
+  </div>
+</aside>
+
 
 
     <!-- Main Content -->
@@ -116,31 +94,26 @@
       </div>
 
       <!-- Charts: keep three cards, only income is populated -->
-      <div class="charts-grid">
-        <div class="chart-box">
-          <div class="chart-title">Monthly Income Trend</div>
-          <canvas id="incomeChart"></canvas>
-        </div>
+     <div class="charts-grid">
+<!-- Monthly Income -->
+<div class="chart-box">
+  <div class="chart-title">Monthly Income Trend</div>
+  <canvas id="incomeChart"></canvas>
+</div>
 
-        <!-- <div class="chart-box">
-          <div class="chart-title">Expense Breakdown by Category</div>
-          <div class="chart-placeholder"></div>
-        </div> -->
-        <!-- Expense Breakdown by Category -->
-         <div class="chart-box">
-          <div class="chart-title">Expense Breakdown by Category</div>
-          <div class="chart-body">
-            <canvas id="categoryChart" height="220"></canvas>
-            <p id="categoryChartEmpty" class="empty-msg">No expense data yet.</p>
-          </div>
-        </div>
+<!-- Expense Breakdown -->
+<div class="chart-box">
+  <div class="chart-title">Expense Breakdown by Category</div>
+  <canvas id="categoryChart"></canvas>
+</div>
+
+<!-- Budget vs Actual -->
+<div class="chart-box">
+  <div class="chart-title">Budget vs Actual</div>
+  <canvas id="budgetVsActualChart"></canvas>
+</div>
 
 
-        <div class="chart-box">
-          <div class="chart-title">Budget vs Actual</div>
-          <div class="chart-placeholder"></div>
-        </div>
-      </div>
     </main>
 
     <!-- Scripts -->
@@ -153,6 +126,7 @@
         '/dashboard': 'dashboard',
         '/income': 'income',
         '/expense': 'expense',
+        '/budget-tracker': 'budget-tracker',
         '/report': 'report',
       };
       const key = map[path];

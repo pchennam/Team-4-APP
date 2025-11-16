@@ -1,35 +1,46 @@
-require('dotenv').config();
-const express = require('express');
-const mysql = require('mysql2/promise');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const path = require('path');
+require("dotenv").config();
+const express = require("express");
+const mysql = require("mysql2/promise");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const path = require("path");
 
 const app = express();
 const port = 3000;
 
-// Middleware
+// ===============================================================
+// MIDDLEWARE
+// ===============================================================
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static("public"));
 
-// ---------- HTML ROUTES ----------
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'logon.html'));
-});
-app.get('/dashboard', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-app.get('/income', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'income.html'));
-});
-app.get('/expense', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'expense.html'));
-});
-// ---------- END HTML ROUTES ----------
+// ===============================================================
+// HTML ROUTES
+// ===============================================================
+app.get("/", (_req, res) =>
+  res.sendFile(path.join(__dirname, "public", "logon.html"))
+);
+app.get("/dashboard", (_req, res) =>
+  res.sendFile(path.join(__dirname, "public", "dashboard.html"))
+);
+app.get("/income", (_req, res) =>
+  res.sendFile(path.join(__dirname, "public", "income.html"))
+);
+app.get("/expense", (_req, res) =>
+  res.sendFile(path.join(__dirname, "public", "expense.html"))
+);
+app.get("/report", (_req, res) =>
+  res.sendFile(path.join(__dirname, "public", "budget.html"))
+);
+app.get("/budget-tracker", (_req, res) =>
+  res.sendFile(path.join(__dirname, "public", "budget.html"))
+);
 
-// ---------- DB + AUTH ----------
+// ===============================================================
+// DATABASE
+// ===============================================================
 async function createConnection() {
-  return await mysql.createConnection({
+  return mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -37,314 +48,322 @@ async function createConnection() {
   });
 }
 
+// ===============================================================
+// AUTH
+// ===============================================================
 async function authenticateToken(req, res, next) {
-  const hdr = req.headers.authorization || '';
-  const parts = hdr.split(' ');
-  const token = parts.length === 2 && parts[0] === 'Bearer' ? parts[1] : null;
-  if (!token) return res.status(401).json({ message: 'Access denied. No token provided.' });
+  const hdr = req.headers.authorization || "";
+  const parts = hdr.split(" ");
+  const token = parts.length === 2 && parts[0] === "Bearer" ? parts[1] : null;
+
+  if (!token)
+    return res.status(401).json({ message: "No authentication token." });
 
   jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-    if (err) return res.status(401).json({ message: 'Invalid or expired token.' });
+    if (err)
+      return res.status(401).json({ message: "Invalid or expired token." });
+
     try {
       const conn = await createConnection();
-      const [rows] = await conn.execute('SELECT email FROM user WHERE email = ?', [decoded.email]);
+      const [rows] = await conn.execute(
+        "SELECT email FROM user WHERE email = ?",
+        [decoded.email]
+      );
       await conn.end();
 
-      if (!rows.length) return res.status(403).json({ message: 'Account not found or deactivated.' });
+      if (!rows.length)
+        return res.status(403).json({ message: "User not found." });
 
-      req.user = decoded; // { email }
-      req.account = { email: rows[0].email, is_admin: 0 };
+      req.user = decoded;
       next();
     } catch (e) {
       console.error(e);
-      res.status(500).json({ message: 'Database error during authentication.' });
+      res.status(500).json({ message: "Database error." });
     }
   });
 }
 
-function authorizeAdmin(req, res, next) {
-  if (!req.account?.is_admin) return res.status(403).json({ message: 'Admin privileges required.' });
-  next();
-}
-// ---------- END DB + AUTH ----------
-
-// ---------- ACCOUNT ROUTES ----------
-app.post('/api/create-account', async (req, res) => {
+// ===============================================================
+// ACCOUNT ROUTES
+// ===============================================================
+app.post("/api/create-account", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ message: 'Email and password are required.' });
+
+  if (!email || !password)
+    return res
+      .status(400)
+      .json({ message: "Email and password are required." });
 
   try {
     const conn = await createConnection();
     const hashed = await bcrypt.hash(password, 10);
-    await conn.execute('INSERT INTO user (email, password) VALUES (?, ?)', [email, hashed]);
+
+    await conn.execute("INSERT INTO user (email, password) VALUES (?, ?)", [
+      email,
+      hashed,
+    ]);
+
     await conn.end();
-    res.status(201).json({ message: 'Account created successfully!' });
-  } catch (error) {
-    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'An account with this email already exists.' });
-    console.error(error);
-    res.status(500).json({ message: 'Error creating account.' });
+    res.status(201).json({ message: "Account created successfully!" });
+  } catch (err) {
+    if (err.code === "ER_DUP_ENTRY")
+      return res.status(409).json({ message: "Email already exists." });
+
+    console.error(err);
+    res.status(500).json({ message: "Error creating account." });
   }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ message: 'Email and password are required.' });
 
   try {
     const conn = await createConnection();
-    const [rows] = await conn.execute('SELECT * FROM user WHERE email = ?', [email]);
+    const [rows] = await conn.execute("SELECT * FROM user WHERE email=?", [
+      email,
+    ]);
     await conn.end();
 
-    if (!rows.length) return res.status(401).json({ message: 'Invalid email or password.' });
+    if (!rows.length)
+      return res.status(401).json({ message: "Invalid email or password." });
 
-    const user = rows[0];
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).json({ message: 'Invalid email or password.' });
+    const ok = await bcrypt.compare(password, rows[0].password);
+    if (!ok)
+      return res.status(401).json({ message: "Invalid email or password." });
 
-    const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.status(200).json({ token });
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.json({ token });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: 'Error logging in.' });
+    res.status(500).json({ message: "Login failed." });
   }
 });
 
-app.get('/api/users', authenticateToken, async (_req, res) => {
+// ===============================================================
+// INCOME ROUTES
+// ===============================================================
+app.get("/api/income", authenticateToken, async (req, res) => {
   try {
     const conn = await createConnection();
-    const [rows] = await conn.execute('SELECT email FROM user');
-    await conn.end();
-    res.status(200).json({ emails: rows.map(r => r.email) });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error retrieving email addresses.' });
-  }
-});
-// ---------- END ACCOUNT ROUTES ----------
-
-// ===================================================================
-// =============== INCOME ROUTES (plural + singular) ==================
-// ===================================================================
-
-// List
-app.get(['/api/income', '/api/incomes'], authenticateToken, async (req, res) => {
-  const { from, to } = req.query;
-  const sql = (from && to)
-    ? 'SELECT * FROM income WHERE user_email=? AND date BETWEEN ? AND ? ORDER BY date DESC'
-    : 'SELECT * FROM income WHERE user_email=? ORDER BY date DESC';
-  const params = (from && to) ? [req.user.email, from, to] : [req.user.email];
-
-  try {
-    const conn = await createConnection();
-    const [rows] = await conn.execute(sql, params);
+    const [rows] = await conn.execute(
+      "SELECT * FROM income WHERE user_email=? ORDER BY date DESC",
+      [req.user.email]
+    );
     await conn.end();
     res.json({ items: rows });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error retrieving income.' });
+    res.status(500).json({ message: "Error retrieving income." });
   }
 });
 
-// Create
-app.post(['/api/income', '/api/incomes'], authenticateToken, async (req, res) => {
-  const { source, amount, cadence = 'monthly', date } = req.body;
-  if (!source || amount == null || !date) {
-    return res.status(400).json({ message: 'source, amount, and date are required' });
-  }
+app.post("/api/income", authenticateToken, async (req, res) => {
+  const { source, amount, date, cadence = "monthly" } = req.body;
+
+  if (!source || !amount || !date)
+    return res.status(400).json({ message: "Missing fields." });
+
   try {
     const conn = await createConnection();
     const [r] = await conn.execute(
-      'INSERT INTO income (user_email, source, amount, cadence, date) VALUES (?, ?, ?, ?, ?)',
-      [req.user.email, String(source).trim(), Number(amount), cadence, date]
+      "INSERT INTO income (user_email, source, amount, cadence, date) VALUES (?, ?, ?, ?, ?)",
+      [req.user.email, source.trim(), Number(amount), cadence, date]
     );
     await conn.end();
     res.status(201).json({ id: r.insertId });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error creating income.' });
+    res.status(500).json({ message: "Error creating income." });
   }
 });
 
-// Update
-app.patch(['/api/income/:id', '/api/incomes/:id'], authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const fields = ['source', 'amount', 'cadence', 'date'];
-  const sets = []; const vals = [];
-  fields.forEach(k => { if (k in req.body) { sets.push(`${k}=?`); vals.push(req.body[k]); } });
-  if (!sets.length) return res.status(400).json({ message: 'No fields to update.' });
-
+// ===============================================================
+// EXPENSE ROUTES
+// ===============================================================
+app.get("/api/expense", authenticateToken, async (req, res) => {
   try {
     const conn = await createConnection();
-    const [r] = await conn.execute(
-      `UPDATE income SET ${sets.join(', ')} WHERE id=? AND user_email=?`,
-      [...vals, id, req.user.email]
+    const [rows] = await conn.execute(
+      "SELECT * FROM expense WHERE user_email=? ORDER BY date DESC",
+      [req.user.email]
     );
-    await conn.end();
-    if (!r.affectedRows) return res.status(404).json({ message: 'Income not found.' });
-    res.json({ updated: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error updating income.' });
-  }
-});
-
-// Delete
-app.delete(['/api/income/:id', '/api/incomes/:id'], authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const conn = await createConnection();
-    const [r] = await conn.execute('DELETE FROM income WHERE id=? AND user_email=?', [id, req.user.email]);
-    await conn.end();
-    if (!r.affectedRows) return res.status(404).json({ message: 'Income not found.' });
-    res.json({ deleted: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error deleting income.' });
-  }
-});
-
-// ===================================================================
-// ============== EXPENSE ROUTES (plural + singular) ==================
-// ===================================================================
-
-// List
-app.get(['/api/expense', '/api/expenses'], authenticateToken, async (req, res) => {
-  const { from, to } = req.query;
-  const sql = (from && to)
-    ? 'SELECT * FROM expense WHERE user_email=? AND date BETWEEN ? AND ? ORDER BY date DESC'
-    : 'SELECT * FROM expense WHERE user_email=? ORDER BY date DESC';
-  const params = (from && to) ? [req.user.email, from, to] : [req.user.email];
-
-  try {
-    const conn = await createConnection();
-    const [rows] = await conn.execute(sql, params);
     await conn.end();
     res.json({ items: rows });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error retrieving expenses.' });
+    res.status(500).json({ message: "Error retrieving expenses." });
   }
 });
 
-// Create (includes cadence)
-app.post(['/api/expense', '/api/expenses'], authenticateToken, async (req, res) => {
-  const { category, description = null, amount, date, cadence = 'monthly' } = req.body;
-  if (!category || amount == null || !date) {
-    return res.status(400).json({ message: 'category, amount, and date are required' });
-  }
+app.post("/api/expense", authenticateToken, async (req, res) => {
+  const { category, amount, date, description = null, cadence = "monthly" } =
+    req.body;
+
+  if (!category || !amount || !date)
+    return res.status(400).json({ message: "Missing fields." });
+
   try {
     const conn = await createConnection();
     const [r] = await conn.execute(
-      'INSERT INTO expense (user_email, category, description, amount, date, cadence) VALUES (?, ?, ?, ?, ?, ?)',
-      [req.user.email, String(category).trim(), description, Number(amount), date, cadence]
+      "INSERT INTO expense (user_email, category, description, amount, date, cadence) VALUES (?, ?, ?, ?, ?, ?)",
+      [req.user.email, category.trim(), description, Number(amount), date, cadence]
     );
     await conn.end();
     res.status(201).json({ id: r.insertId });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error creating expense.' });
+    res.status(500).json({ message: "Error creating expense." });
   }
 });
 
-// Update (allows cadence)
-app.patch(['/api/expense/:id', '/api/expenses/:id'], authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const fields = ['category', 'description', 'amount', 'date', 'cadence'];
-  const sets = []; const vals = [];
-  fields.forEach(k => { if (k in req.body) { sets.push(`${k}=?`); vals.push(req.body[k]); } });
-  if (!sets.length) return res.status(400).json({ message: 'No fields to update.' });
+// ===============================================================
+// BUDGET ROUTES
+// ===============================================================
+app.get("/api/budgets", authenticateToken, async (req, res) => {
+  try {
+    const conn = await createConnection();
+    const [rows] = await conn.execute(
+      "SELECT id, category, amount, cadence, created_at FROM budget WHERE user_email=? ORDER BY category",
+      [req.user.email]
+    );
+    await conn.end();
+    res.json({ items: rows });
+  } catch (e) {
+    res.status(500).json({ message: "Error retrieving budgets." });
+  }
+});
+
+app.post("/api/budgets", authenticateToken, async (req, res) => {
+  const { category, amount, cadence = "monthly" } = req.body;
+
+  if (!category || !amount)
+    return res.status(400).json({ message: "Missing fields." });
 
   try {
     const conn = await createConnection();
+
     const [r] = await conn.execute(
-      `UPDATE expense SET ${sets.join(', ')} WHERE id=? AND user_email=?`,
-      [...vals, id, req.user.email]
+      "INSERT INTO budget (user_email, category, amount, cadence) VALUES (?, ?, ?, ?)",
+      [req.user.email, category.trim(), Number(amount), cadence]
     );
+
+    // save custom category
+    await conn.execute(
+      "INSERT IGNORE INTO user_categories (user_email, category) VALUES (?, ?)",
+      [req.user.email, category.trim()]
+    );
+
     await conn.end();
-    if (!r.affectedRows) return res.status(404).json({ message: 'Expense not found.' });
-    res.json({ updated: true });
+    res.status(201).json({ id: r.insertId });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error updating expense.' });
+    res.status(500).json({ message: "Error creating budget." });
   }
 });
 
-// Delete
-app.delete(['/api/expense/:id', '/api/expenses/:id'], authenticateToken, async (req, res) => {
-  const { id } = req.params;
+// ===============================================================
+// CATEGORIES (BUILT-IN + CUSTOM)
+// ===============================================================
+app.get("/api/categories", authenticateToken, async (req, res) => {
+  const builtIn = [
+    "Rent",
+    "Utilities",
+    "Food/Groceries",
+    "Transportation",
+    "Entertainment",
+    "Health",
+    "Other",
+  ];
+
   try {
     const conn = await createConnection();
-    const [r] = await conn.execute('DELETE FROM expense WHERE id=? AND user_email=?', [id, req.user.email]);
+    const [rows] = await conn.execute(
+      "SELECT category FROM user_categories WHERE user_email=?",
+      [req.user.email]
+    );
     await conn.end();
-    if (!r.affectedRows) return res.status(404).json({ message: 'Expense not found.' });
-    res.json({ deleted: true });
+
+    const custom = rows.map((r) => r.category);
+
+    res.json({ categories: [...builtIn, ...custom] });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error deleting expense.' });
+    res.status(500).json({ message: "Error loading categories." });
   }
 });
 
-// ---------- SIMPLE REPORTS ----------
-app.get('/api/reports', authenticateToken, async (req, res) => {
-  const { from, to } = req.query;
-  const range = (from && to) ? ' AND date BETWEEN ? AND ?' : '';
-  const params = (from && to) ? [req.user.email, from, to] : [req.user.email];
+// ===============================================================
+// REPORTS (THE IMPORTANT ONE — FIXED)
+// ===============================================================
+app.get("/api/reports", authenticateToken, async (req, res) => {
+  const email = req.user.email;
 
   try {
     const conn = await createConnection();
 
-    const [inc] = await conn.execute(
-      `SELECT IFNULL(SUM(amount), 0) AS income
-         FROM income
-        WHERE user_email=?${range}`,
-      params
+    // ---- totals ----
+    const [[inc]] = await conn.execute(
+      "SELECT IFNULL(SUM(amount),0) AS income FROM income WHERE user_email=?",
+      [email]
     );
 
-    const [exp] = await conn.execute(
-      `SELECT IFNULL(SUM(amount), 0) AS expenses
-         FROM expense
-        WHERE user_email=?${range}`,
-      params
+    const [[exp]] = await conn.execute(
+      "SELECT IFNULL(SUM(amount),0) AS expenses FROM expense WHERE user_email=?",
+      [email]
     );
 
+    // ---- monthly income (line chart) ----
+    const [monthlyInc] = await conn.execute(
+      `SELECT DATE_FORMAT(date, '%Y-%m-01') AS date,
+              SUM(amount) AS total
+       FROM income
+       WHERE user_email=?
+       GROUP BY DATE_FORMAT(date, '%Y-%m-01')
+       ORDER BY date`,
+      [email]
+    );
+
+    // ---- expenses by category ----
     const [cats] = await conn.execute(
       `SELECT category, SUM(amount) AS total
-         FROM expense
-        WHERE user_email=?${range}
-        GROUP BY category
-        ORDER BY total DESC`,
-      params
+       FROM expense
+       WHERE user_email=?
+       GROUP BY category
+       ORDER BY total DESC`,
+      [email]
+    );
+
+    // ---- budgets by category ----
+    const [bud] = await conn.execute(
+      `SELECT category, SUM(amount) AS total
+       FROM budget
+       WHERE user_email=?
+       GROUP BY category`,
+      [email]
     );
 
     await conn.end();
 
-    const income = Number(inc?.[0]?.income || 0);
-    const expenses = Number(exp?.[0]?.expenses || 0);
-
+    // ---- final response ----
     res.json({
-      totals: { income, expenses, net: income - expenses },
-      expensesByCategory: cats || []
+      totals: {
+        income: inc.income,
+        expenses: exp.expenses,
+        net: inc.income - exp.expenses,
+      },
+      monthlyIncome: monthlyInc,
+      expensesByCategory: cats,
+      budgets: {
+        total: bud.reduce((s, r) => s + Number(r.total), 0),
+        byCategory: bud,
+      },
     });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: 'Error building report.' });
+    res.status(500).json({ message: "Error building report." });
   }
 });
 
-// ---------- ADMIN ----------
-app.get('/api/admin/users', authenticateToken, authorizeAdmin, async (_req, res) => {
-  try {
-    const conn = await createConnection();
-    const [rows] = await conn.execute('SELECT email, is_admin FROM user ORDER BY email');
-    await conn.end();
-    res.status(200).json({ users: rows });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Error retrieving users.' });
-  }
-});
-
-// ---------- START ----------
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+// ===============================================================
+// START SERVER
+// ===============================================================
+app.listen(port, () =>
+  console.log(`Server running at http://localhost:${port}`)
+);

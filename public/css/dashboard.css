@@ -258,3 +258,6 @@ button:hover { background-color: #009e73; }
 #incomeChart {
   margin-top: 6px;
 }
+#budgetVsActualChart {
+  height: 260px !important;
+}

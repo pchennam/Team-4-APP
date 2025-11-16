@@ -1,344 +1,266 @@
-////////////////////////////////////////////////////////////////
-// DASHBOARD.JS  (controller)
-////////////////////////////////////////////////////////////////
+// ====================== dashboard.js (FINAL WORKING VERSION) ======================
+"use strict";
 
-// ---- token + helpers ----
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-const getToken = () => localStorage.getItem('token') || localStorage.getItem('jwtToken') || '';
-const authHeaders = () => (getToken() ? { Authorization: 'Bearer ' + getToken() } : {});
+// ---------------- AUTH ----------------
+const getToken = () =>
+  localStorage.getItem("token") || localStorage.getItem("jwtToken") || "";
 
-async function fetchJSON(url) {
-  const r = await fetch(url, { headers: authHeaders() });
-  if (!r.ok) {
-    const t = await r.text().catch(() => '');
-    console.warn(url, 'failed:', r.status, t);
-    throw new Error(`Request failed ${r.status}`);
+const auth = () =>
+  getToken() ? { Authorization: "Bearer " + getToken() } : {};
+
+const currencyFmt = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+// ---------------- API ----------------
+async function apiGetReport() {
+  const r = await fetch("/api/reports", { headers: auth() });
+
+  if (r.status === 401) {
+    localStorage.clear();
+    location.href = "/";
   }
+
   return r.json();
 }
 
-// safely coerce values like 120, "120", "120.00", "$120.00" → 120
-const toNum = (v) => {
-  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-  const n = Number(String(v ?? '').replace(/[^0-9.-]+/g, ''));
-  return Number.isFinite(n) ? n : 0;
-};
+// ---------------- LOAD DASHBOARD ----------------
+async function loadDashboard() {
+  const data = await apiGetReport();
 
-// --- small date helpers ---
-const pad2 = (n) => String(n).padStart(2, '0');
-// "YYYY-MM" -> "Oct '25"
-function formatMonthLabel(yyyyMm) {
-  const d = new Date(`${yyyyMm}-01T00:00:00`);
-  if (isNaN(d)) return yyyyMm;
-  const mon = d.toLocaleString('en-US', { month: 'short' });
-  const yy  = String(d.getFullYear()).slice(-2);
-  return `${mon} '${yy}`;
+  // ---------- KPIs ----------
+  document.getElementById("kpiIncome").textContent =
+    data?.totals?.income > 0
+      ? currencyFmt.format(data.totals.income)
+      : "No data";
+
+  document.getElementById("kpiExpenses").textContent =
+    data?.totals?.expenses > 0
+      ? currencyFmt.format(data.totals.expenses)
+      : "No data";
+
+  const budgetTotal = (data.budgets?.byCategory || []).reduce(
+    (sum, row) => sum + Number(row.total || 0),
+    0
+  );
+
+  document.getElementById("kpiBudget").textContent =
+    budgetTotal > 0 ? currencyFmt.format(budgetTotal) : "No data";
+
+  // ---------- Render Charts ----------
+  renderIncomeChart(data.monthlyIncome || []);
+  setupCategoryChart(data.expensesByCategory || []);
+  setupBudgetVsActualChart(
+    data.budgets.byCategory || [],
+    data.expensesByCategory || []
+  );
 }
 
-// --- KPIs (try reports + client sums, then pick best) ---
-async function loadKPIs() {
-  const incomeEl = document.getElementById('kpiIncome');
-  const expEl    = document.getElementById('kpiExpenses');
-  const budEl    = document.getElementById('kpiBudget');
-
-  if (incomeEl) incomeEl.textContent = 'No data';
-  if (expEl)    expEl.textContent    = 'No data';
-  if (budEl)    budEl.textContent    = 'No data';
-
-  const token = getToken();
-  if (!token) {
-    console.warn('[KPIs] No token; staying "No data".');
-    return;
-  }
-
-  let reportsTotals = null;
-  let clientTotals  = null;
-
-  // 1) preferred: server /api/reports
-  const pReports = (async () => {
-    try {
-      const data = await fetchJSON('/api/reports'); // { totals:{income,expenses,net} }
-      reportsTotals = {
-        income:   toNum(data?.totals?.income),
-        expenses: toNum(data?.totals?.expenses),
-      };
-      console.log('[KPIs] /api/reports totals:', reportsTotals);
-    } catch (e) {
-      console.warn('[KPIs] /api/reports failed -> will rely on client sums too:', e?.message || e);
-    }
-  })();
-
-  // 2) fallback: compute from endpoints
-  const pClient = (async () => {
-    try {
-      const [incRes, expRes] = await Promise.allSettled([
-        fetchJSON('/api/income'),   // { items: [...] }
-        fetchJSON('/api/expenses')  // { items: [...] }
-      ]);
-      const incomeItems  = incRes.status === 'fulfilled' ? (incRes.value.items  || []) : [];
-      const expenseItems = expRes.status === 'fulfilled' ? (expRes.value.items || []) : [];
-
-      const incomeSum  = incomeItems.reduce((s, r)  => s + toNum(r.amount), 0);
-      const expenseSum = expenseItems.reduce((s, r) => s + toNum(r.amount), 0);
-
-      clientTotals = { income: incomeSum, expenses: expenseSum };
-      console.log('[KPIs] client totals:', clientTotals);
-    } catch (e) {
-      console.warn('[KPIs] client totals failed:', e?.message || e);
-    }
-  })();
-
-  await Promise.all([pReports, pClient]);
-
-  // choose values
-  const pick = (a, b) => {
-    const aNum = toNum(a), bNum = toNum(b);
-    if (aNum > 0 && bNum > 0) return Math.max(aNum, bNum);
-    return (aNum > 0) ? aNum : (bNum > 0 ? bNum : 0);
-  };
-
-  const incomeVal   = pick(reportsTotals?.income,   clientTotals?.income);
-  const expensesVal = pick(reportsTotals?.expenses, clientTotals?.expenses);
-
-  if (incomeEl) incomeEl.textContent = incomeVal   > 0 ? money.format(incomeVal)   : 'No data';
-  if (expEl)    expEl.textContent    = expensesVal > 0 ? money.format(expensesVal) : 'No data';
-
-  const budget = toNum(localStorage.getItem('monthlyBudget'));
-  if (budEl) budEl.textContent = budget > 0 ? money.format(budget) : 'No data';
+// ---------------- FORMAT MONTH LABEL (Jan '23) ----------------
+function formatMonthLabel(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return "";
+  const month = d.toLocaleString("en-US", { month: "short" });
+  const yr = String(d.getFullYear()).slice(2);
+  return `${month} '${yr}`;
 }
 
-// --- Income chart (real data from /api/income) ---
-// let incomeChart;
-// async function loadIncomeChart() {
-//   const canvas = document.getElementById('incomeChart');
-//   if (!canvas) return;
+// ---------------- INCOME TREND CHART ----------------
+let incomeChart = null;
+function renderIncomeChart(rows) {
+  const ctx = document.getElementById("incomeChart")?.getContext("2d");
+  if (!ctx) return;
+  if (incomeChart) incomeChart.destroy();
 
-//   try {
-//     const data = await fetchJSON('/api/income'); // { items: [...] }
-//     const rows = Array.isArray(data?.items) ? data.items : [];
+  const labels = rows.map((r) => formatMonthLabel(r.date));
+  const values = rows.map((r) => Number(r.total));
 
-//     // group by YYYY-MM
-//     const byMonth = {};
-//     for (const r of rows) {
-//       const key = String(r.date || '').slice(0, 7); // YYYY-MM
-//       if (!key) continue;
-//       byMonth[key] = (byMonth[key] || 0) + toNum(r.amount);
-//     }
-//     const labels = Object.keys(byMonth).sort();
-//     const values = labels.map(k => byMonth[k]);
-
-//     // draw
-//     if (incomeChart) incomeChart.destroy();
-//     incomeChart = new Chart(canvas, {
-//       type: 'line',
-//       data: {
-//         labels: labels.map(formatMonthLabel),
-//         datasets: [{ label: 'Monthly Income ($)', data: values, fill: true, tension: 0.35 }]
-//       },
-//       options: {
-//         responsive: true,
-//         plugins: { legend: { position: 'top' } },
-//         scales: {
-//           y: {
-//             beginAtZero: true,
-//             ticks: { callback: (v) => money.format(v) }
-//           }
-//         }
-//       }
-//     });
-//   } catch (e) {
-//     console.error('[Chart] failed to load income chart:', e?.message || e);
-//   }
-// }
-// --- Income chart (real data from /api/income) ---
-let incomeChart;
-async function loadIncomeChart() {
-  const canvas = document.getElementById('incomeChart');
-  if (!canvas) return;
-
-  try {
-    const data = await fetchJSON('/api/income'); // { items: [...] }
-    const rows = Array.isArray(data?.items) ? data.items : [];
-
-    // group by YYYY-MM
-    const byMonth = {};
-    for (const r of rows) {
-      const key = String(r.date || '').slice(0, 7); // YYYY-MM
-      if (!key) continue;
-      byMonth[key] = (byMonth[key] || 0) + toNum(r.amount);
-    }
-    const labels = Object.keys(byMonth).sort();
-    const values = labels.map(k => byMonth[k]);
-
-    if (incomeChart) incomeChart.destroy();
-    incomeChart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: labels.map(formatMonthLabel),
-        datasets: [{
-          label: 'Monthly Income ($)',
-          data: values,
-          fill: true,
-          tension: 0.35
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              boxWidth: 10,     // smaller color box
-              boxHeight: 10,
-              padding: 6,       // tighter spacing
-              font: { size: 12 } // smaller font
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { callback: (v) => money.format(v) }
-          }
-        },
-        elements: {
-          point: { radius: 2 },  // optional: smaller points to match the compact legend
-          line:  { borderWidth: 2 }
-        }
-      }
-    });
-  } catch (e) {
-    console.error('[Chart] failed to load income chart:', e?.message || e);
-  }
-}
-
-
-// ===== Expenses by Category (doughnut) =====
-let categoryChart; // doughnut for expenses by category
-
-async function fetchReports(rangeParams = '') {
-  const r = await fetch('/api/reports' + rangeParams, { headers: authHeaders() }); // <-- fixed
-  if (!r.ok) throw new Error('Failed to load reports');
-  return r.json(); // { totals: {income, expenses, net}, expensesByCategory: [{category,total}, ...] }
-}
-
-function renderCategoryChart(expensesByCategory = []) {
-  const canvas = document.getElementById('categoryChart');
-  const emptyMsg = document.getElementById('categoryChartEmpty');
-  if (!canvas) return;
-
-  // Show/Hide empty message
-  const hasData = Array.isArray(expensesByCategory) && expensesByCategory.length > 0;
-  canvas.style.display = hasData ? 'block' : 'none';
-  if (emptyMsg) emptyMsg.style.display = hasData ? 'none' : 'block';
-  if (!hasData) {
-    if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
-    return;
-  }
-
-  const labels = expensesByCategory.map(x => x.category ?? 'Unknown');
-  const values = expensesByCategory.map(x => Number(x.total || 0));
-
-  // Nice, soft palette
-  const palette = [
-    '#4F46E5','#10B981','#F59E0B','#EF4444','#06B6D4',
-    '#8B5CF6','#84CC16','#F97316','#14B8A6','#EC4899'
-  ];
-
-  if (categoryChart) categoryChart.destroy();
-  const ctx = canvas.getContext('2d');
-  const total = values.reduce((a,b) => a + b, 0);
-
-  categoryChart = new Chart(ctx, {
-    type: 'doughnut',
+  incomeChart = new Chart(ctx, {
+    type: "line",
     data: {
       labels,
-      datasets: [{
-        data: values,
-        backgroundColor: labels.map((_, i) => palette[i % palette.length]),
-        borderWidth: 1
-      }]
+      datasets: [
+        {
+          label: "Monthly Income ($)",
+          data: values,
+          borderColor: "#4DA3FF",
+          backgroundColor: "rgba(77,163,255,0.2)",
+          pointBackgroundColor: "#4DA3FF",
+          borderWidth: 3,
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: (value) => currencyFmt.format(value),
+          },
+        },
+      },
+    },
+  });
+}
+
+// // ---------------- EXPENSE CATEGORY DOUGHNUT ----------------
+// let categoryChart = null;
+// function setupCategoryChart(rows) {
+//   const ctx = document.getElementById("categoryChart")?.getContext("2d");
+//   if (!ctx) return;
+
+//   if (categoryChart) categoryChart.destroy();
+
+//   categoryChart = new Chart(ctx, {
+//     type: "doughnut",
+//     data: {
+//       labels: rows.map((r) => r.category),
+//       datasets: [
+//         {
+//           data: rows.map((r) => Number(r.total)),
+//           backgroundColor: ["#00A878", "#2274A5", "#F75C03", "#8C4F7F", "#FFB400"],
+//           hoverOffset: 12,
+//         },
+//       ],
+//     },
+//     options: {
+//       plugins: { legend: { position: "right" } },
+//     },
+//   });
+// }
+
+// ---------------- BUDGET VS ACTUAL ----------------
+let barChart = null;
+function setupBudgetVsActualChart(budgets, expenses) {
+  const ctx = document.getElementById("budgetVsActualChart")?.getContext("2d");
+  if (!ctx) return;
+
+  if (barChart) barChart.destroy();
+
+  // all categories that appear anywhere
+  const categories = Array.from(
+    new Set([
+      ...budgets.map((b) => b.category),
+      ...expenses.map((e) => e.category),
+    ])
+  );
+
+  const budgetVals = categories.map(
+    (cat) => budgets.find((b) => b.category === cat)?.total || 0
+  );
+
+  const actualVals = categories.map(
+    (cat) => expenses.find((e) => e.category === cat)?.total || 0
+  );
+
+  barChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: categories,
+      datasets: [
+        {
+          label: "Budget",
+          data: budgetVals,
+          backgroundColor: "#00A878CC",
+          borderColor: "#00A878",
+          borderWidth: 2,
+          barThickness: 30,
+        },
+        {
+          label: "Actual",
+          data: actualVals,
+          backgroundColor: "#F75C03CC",
+          borderColor: "#F75C03",
+          borderWidth: 2,
+          barThickness: 30,
+        },
+      ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'right', labels: { boxWidth: 14 } },
+        legend: { position: "bottom" },
         tooltip: {
           callbacks: {
-            label: (ctx) => {
-              const v = ctx.parsed ?? 0;
-              const pct = total ? (v / total) * 100 : 0;
-              return `${ctx.label}: ${money.format(v)} (${pct.toFixed(1)}%)`;
-            }
-          }
-        }
+            label: (ctx) =>
+              `${ctx.dataset.label}: ${currencyFmt.format(ctx.raw)}`,
+          },
+        },
       },
-      cutout: '55%' // ring
-    }
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: (v) => currencyFmt.format(v) },
+        },
+        x: {
+          ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 },
+        },
+      },
+    },
+  });
+}
+// ---------------- EXPENSE CATEGORY DOUGHNUT ----------------
+let categoryChart = null;
+function setupCategoryChart(rows) {
+  const ctx = document.getElementById("categoryChart")?.getContext("2d");
+  if (!ctx) return;
+
+  if (categoryChart) categoryChart.destroy();
+
+  const labels = rows.map((r) => r.category);
+  const values = rows.map((r) => Number(r.total));
+
+  const total = values.reduce((a, b) => a + b, 0);
+
+  categoryChart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels,
+      datasets: [
+        {
+          data: values,
+          backgroundColor: ["#00A878", "#2274A5", "#F75C03", "#8C4F7F", "#FFB400"],
+          hoverOffset: 12,
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        legend: { position: "right" },
+
+        // ⭐ ADD TOOLTIP FORMATTER HERE ⭐
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const category = context.label;
+              const amount = context.raw;
+              const pct = ((amount / total) * 100).toFixed(1);
+
+              return [
+                `${category}: ${currencyFmt.format(amount)}`,
+                `${pct}% of total`
+              ];
+            },
+          },
+        },
+      },
+    },
   });
 }
 
-async function loadExpenseCategoryChart() {
-  try {
-    const reports = await fetchReports(); // add ?from=&to= if you wire range chips later
-    renderCategoryChart(reports.expensesByCategory || []);
-  } catch (e) {
-    console.error('[CategoryChart] failed:', e?.message || e);
-  }
-}
+// ---------------- INIT ----------------
+document.addEventListener("DOMContentLoaded", () => {
+  loadDashboard();
 
-// --- Optional: show user email in header (from JWT) ---
-function renderUserNameFromJWT() {
-  const el = document.getElementById('userName');
-  if (!el) return;
-  const tok = getToken();
-  try {
-    const payload = JSON.parse(atob((tok || '').split('.')[1] || ''));
-    el.textContent = payload?.email || 'User';
-  } catch {
-    el.textContent = 'User';
-  }
-}
+  document
+    .getElementById("refreshButton")
+    ?.addEventListener("click", loadDashboard);
 
-// ---- init ----
-document.addEventListener('DOMContentLoaded', () => {
-  const logoutButton  = document.getElementById('logoutButton');
-  const refreshButton = document.getElementById('refreshButton');
-
-  if (logoutButton) {
-    logoutButton.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('jwtToken');
-      window.location.href = '/';
-    });
-  }
-
-  if (refreshButton) {
-    refreshButton.addEventListener('click', () => {
-      loadKPIs();
-      loadIncomeChart();
-      loadExpenseCategoryChart(); // refresh the doughnut too
-    });
-  }
-
-  // Auth guard + initial load
-  const token = getToken();
-  if (!token) {
-    window.location.href = '/';
-    return;
-  }
-
-  renderUserNameFromJWT();
-  loadKPIs();
-  loadIncomeChart();
-  loadExpenseCategoryChart();
-
-  // Refresh once if income/expense page set the flag
-  if (localStorage.getItem('refreshDashboard') === 'true') {
-    loadKPIs();
-    loadIncomeChart();
-    loadExpenseCategoryChart();
-    localStorage.removeItem('refreshDashboard');
-  }
-}); // end DOMContentLoaded
+  document.getElementById("logoutButton")?.addEventListener("click", () => {
+    localStorage.clear();
+    location.href = "/";
+  });
+});
