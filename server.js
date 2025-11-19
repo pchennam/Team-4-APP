@@ -30,7 +30,7 @@ app.get("/expense", (_req, res) =>
   res.sendFile(path.join(__dirname, "public", "expense.html"))
 );
 app.get("/report", (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", "budget.html"))
+  res.sendFile(path.join(__dirname, "public", "report.html"))
 );
 app.get("/budget-tracker", (_req, res) =>
   res.sendFile(path.join(__dirname, "public", "budget.html"))
