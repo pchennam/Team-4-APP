@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Financial Report</title>
+
+  <!-- Shared app styles (dashboard theme) -->
+  <link rel="stylesheet" href="./css/dashboard.css" />
+
+  <!-- Report-specific styles -->
+  <link rel="stylesheet" href="./css/report.css" />
+
+  <!-- icons/fonts -->
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Chart.js and SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+
+<body class="dashboard-page">
+  <!-- Sidebar (exact markup from your dashboard) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo"><i class="bx bx-cube-alt"></i></div>
+
+    <nav class="menu">
+      <h1 class="menu-header">Menu</h1>
+
+      <div class="menu-item" data-link="dashboard" data-tooltip="Dashboard">
+        <i class="bx bx-home-smile"></i>
+        <a href="/dashboard" style="text-decoration:none;color:inherit"><span>Dashboard</span></a>
+      </div>
+
+      <div class="menu-item" data-link="income" data-tooltip="Income">
+        <i class="bx bx-bar-chart-alt-2"></i>
+        <a href="/income" style="text-decoration:none;color:inherit"><span>Income</span></a>
+      </div>
+
+      <div class="menu-item" data-link="expense" data-tooltip="Expense">
+        <i class="bx bx-cart"></i>
+        <a href="/expense" style="text-decoration:none;color:inherit"><span>Expense</span></a>
+      </div>
+
+      <div class="menu-item" data-link="budget-tracker" data-tooltip="Budget Tracker">
+        <i class="bx bx-category-alt"></i>
+        <a href="/budget-tracker" style="text-decoration:none;color:inherit"><span>Budget Tracker</span></a>
+      </div>
+
+      <div class="menu-item" data-link="report" data-tooltip="Budget Report">
+        <i class="bx bx-line-chart"></i>
+        <a href="/report" style="text-decoration:none;color:inherit"><span>Budget Report</span></a>
+      </div>
+    </nav>
+
+    <div class="logout" data-tooltip="Logout" id="logoutLink">
+      <i class="bx bx-log-out"></i><span>Logout</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="dashboard-content">
+    <div class="report-header">
+      <div>
+        <div class="report-title">Financial Report</div>
+        <div class="report-subtitle">Complete summary of income, expenses, and budgets</div>
+      </div>
+
+      <div class="report-actions">
+        <button id="refreshButton" class="btn">Refresh</button>
+        <button id="exportBtn" class="btn">Export to Excel</button>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="report-kpis">
+      <div class="report-kpi"><h4>Total Income</h4><p id="r-kpiIncome">$0.00</p></div>
+      <div class="report-kpi"><h4>Total Expenses</h4><p id="r-kpiExpenses">$0.00</p></div>
+      <div class="report-kpi"><h4>Total Budget</h4><p id="r-kpiBudget">$0.00</p></div>
+      <div class="report-kpi"><h4>Remaining Net</h4><p id="r-kpiNet">$0.00</p></div>
+    </div>
+
+    <!-- First row: Spending Pie (left) + Income Trend (right) -->
+    <div class="report-chart-grid">
+      <div class="chart-card">
+        <h3>Spending by Category</h3>
+        <canvas id="reportSpendingChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h3>Monthly Income Trend</h3>
+        <canvas id="reportIncomeTrend"></canvas>
+      </div>
+    </div>
+
+    <!-- Second row: Budget vs Actual (left) + Expense Doughnut (right) -->
+    <div class="report-chart-grid-2">
+      <div class="chart-card">
+        <h3>Budget vs Actual</h3>
+        <canvas id="reportBudgetVsActual"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h3>Expenses by Category</h3>
+        <canvas id="reportExpenseDoughnut"></canvas>
+      </div>
+    </div>
+
+    <!-- === Full-width Budget Spending Pie (Option B2-A) === -->
+    <div class="chart-card" style="margin-top:18px;">
+      <h3>Budget Tracker — Spending Breakdown</h3>
+      <canvas id="reportSpendingChartFull"></canvas>
+    </div>
+
+  </main>
+
+  <!-- nav active + logout script (same as dashboard) -->
+  <script>
+    (function () {
+      const path = location.pathname;
+      const map = {
+        '/dashboard': 'dashboard',
+        '/income': 'income',
+        '/expense': 'expense',
+        '/budget-tracker': 'budget-tracker',
+        '/report': 'report'
+      };
+      const key = map[path];
+      if (key) {
+        document.querySelector(`.menu .menu-item[data-link="${key}"]`)?.classList.add('nav-active');
+      }
+
+      document.getElementById('logoutLink')?.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('jwtToken');
+        location.href = '/';
+      });
+    })();
+  </script>
+
+  <!-- report script -->
+  <script src="./js/report.js" defer></script>
+</body>
+</html>
