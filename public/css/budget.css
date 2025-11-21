@@ -117,14 +117,9 @@ select:focus {
    BUTTONS
    ======================================= */
 button {
-  background: #009e73;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.6rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s;
+  margin-left: 10px; padding: 8px 16px;
+  background-color: #009e73; color: #fff; border: none; border-radius: 6px;
+  cursor: pointer; font-weight: 500;
 }
 
 button:hover {
@@ -221,64 +216,68 @@ canvas {
 /* =======================================
    SIDEBAR LAYOUT (WALLETLY APP SHELL)
    ======================================= */
-.app-layout {
+
+   .app-layout {
   display: flex;
   min-height: 100vh;
 }
 
 .sidebar {
-  width: 230px;
-  background: #ffffff;
-  padding: 1.5rem 1.25rem;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+  width: 280px;
+  min-height: 100vh;
+  background-color: #fff;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  padding: 40px 20px;
+  position: relative;
 }
 
 /* Walletly icon logo */
+/*
 .sidebar .logo {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 2rem;
+  font-size: 24px;
   color: #009e73;
-  margin-bottom: 2rem;
+  margin-bottom: 20px;
 }
 
 /* Sidebar nav container */
+/*
 .sidebar nav {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0rem;
 }
 
 /* =======================================
    SIDEBAR NAV ITEMS (MATCH EXPENSE)
    ======================================= */
 
-/* 🔧 FIX: using rounded rectangles instead of oval */
+/*
 .menu-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  border-radius: 10px; /* <-- CHANGED from 999px */
+  padding: 10px 12px;
+  border-radius: 10px; 
   font-size: 15px;
   font-weight: 500;
   color: #444;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.25s ease, color 0.25s ease;
-  background: transparent;
+  transition: 0.25s ease, 
 }
 
-/* 🔧 ensure icons match size used in Expense page */
+
 .menu-item i {
   font-size: 20px;
 }
 
-/* 🔧 Hover: make background green and text+icon white */
+
 .menu-item:hover {
   background: #009e73;
   color: #fff !important;
@@ -289,7 +288,7 @@ canvas {
   color: #fff !important;
 }
 
-/* 🔧 Active (selected) — stays green and white */
+
 .menu-item.active,
 .menu-item.nav-active {
   background: #009e73;
@@ -303,18 +302,18 @@ canvas {
   color: #fff !important;
 }
 
-/* Sidebar section title */
+
 .menu-header {
   font-size: 14px;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 20px 0 10px;
   color: #999;
 }
 
 /* =======================================
    SIDEBAR FOOTER / LOGOUT LINK
    ======================================= */
-.sidebar-footer {
+/* .sidebar-footer {
   margin-top: 2rem;
 }
 
