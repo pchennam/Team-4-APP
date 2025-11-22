@@ -1,11 +1,30 @@
 /* ========== Base ========== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* FIX THIS IN dashboard.css */
 body {
   font-family: "Poppins", sans-serif;
   background-color: #f6f9ff;
-  display: flex;
 }
+
+/* ADD THIS RIGHT BELOW */
+.dashboard-page,
+.income-page,
+.expense-page,
+.budget-page {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+.dashboard-page .sidebar,
+.income-page .sidebar,
+.expense-page .sidebar,
+.budget-page .sidebar {
+    width: 280px !important;
+    flex-shrink: 0;
+}
+
+
 
 /* ========== Sidebar ========== */
 .sidebar {

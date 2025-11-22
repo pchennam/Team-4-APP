@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Budget Tracker</title>
 
-    <!-- Boxicons (for sidebar icons, same as Expense) -->
+    <!-- Boxicons (for sidebar icons, same as other pages) -->
     <link
       href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
       rel="stylesheet"
     />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
     <!-- Shared app styles -->
     <link rel="stylesheet" href="css/dashboard.css" />
@@ -20,231 +21,239 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
   </head>
 
-  <body>
-    <div class="app-layout">
-      <!-- ===== SIDEBAR  ===== -->
-      <aside class="sidebar" id="sidebar">
-  <div class="logo"><i class="bx bx-cube-alt"></i></div>
+  <body class="budget-page">
+    <!-- ===== SIDEBAR (same shell as dashboard) ===== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <i class="bx bx-cube-alt"></i>
+      </div>
 
-  <nav class="menu">
-    <h1 class="menu-header">Menu</h1>
+      <nav class="menu">
+        <h1 class="menu-header">Menu</h1>
 
-    <div class="menu-item" data-link="dashboard" data-tooltip="Dashboard">
-      <i class="bx bx-home-smile"></i>
-      <a href="/dashboard" style="text-decoration:none;color:inherit">
-        <span>Dashboard</span>
-      </a>
-    </div>
+        <div class="menu-item" data-link="dashboard" data-tooltip="Dashboard">
+          <i class="bx bx-home-smile"></i>
+          <a href="/dashboard" style="text-decoration:none;color:inherit">
+            <span>Dashboard</span>
+          </a>
+        </div>
 
-    <div class="menu-item" data-link="income" data-tooltip="Income">
-      <i class="bx bx-bar-chart-alt-2"></i>
-      <a href="/income" style="text-decoration:none;color:inherit">
-        <span>Income</span>
-      </a>
-    </div>
+        <div class="menu-item" data-link="income" data-tooltip="Income">
+          <i class="bx bx-bar-chart-alt-2"></i>
+          <a href="/income" style="text-decoration:none;color:inherit">
+            <span>Income</span>
+          </a>
+        </div>
 
-    <div class="menu-item" data-link="expense" data-tooltip="Expense">
-      <i class="bx bx-cart"></i>
-      <a href="/expense" style="text-decoration:none;color:inherit">
-        <span>Expense</span>
-      </a>
-    </div>
+        <div class="menu-item" data-link="expense" data-tooltip="Expense">
+          <i class="bx bx-cart"></i>
+          <a href="/expense" style="text-decoration:none;color:inherit">
+            <span>Expense</span>
+          </a>
+        </div>
 
-    <div class="menu-item" data-link="budget-tracker" data-tooltip="Budget Tracker">
-      <i class="bx bx-category-alt"></i>
-      <a href="/budget-tracker" style="text-decoration:none;color:inherit">
-        <span>Budget Tracker</span>
-      </a>
-    </div>
+        <div
+          class="menu-item nav-active"
+          data-link="budget-tracker"
+          data-tooltip="Budget Tracker"
+        >
+          <i class="bx bx-category-alt"></i>
+          <a
+            href="/budget-tracker"
+            style="text-decoration:none;color:inherit"
+          >
+            <span>Budget Tracker</span>
+          </a>
+        </div>
 
-    <div class="menu-item" data-link="report" data-tooltip="Budget Report">
-      <i class="bx bx-line-chart"></i>
-      <a href="/report" style="text-decoration:none;color:inherit">
-        <span>Budget Report</span>
-      </a>
-    </div>
-  </nav>
+        <div class="menu-item" data-link="report" data-tooltip="Budget Report">
+          <i class="bx bx-line-chart"></i>
+          <a href="/report" style="text-decoration:none;color:inherit">
+            <span>Budget Report</span>
+          </a>
+        </div>
+      </nav>
 
-  <div class="logout" data-tooltip="Logout" id="logoutLink">
-    <i class="bx bx-log-out"></i><span>Logout</span>
-  </div>
-</aside>
+      <div class="logout" data-tooltip="Logout" id="logoutLink">
+        <i class="bx bx-log-out"></i><span>Logout</span>
+      </div>
+    </aside>
 
-      <div class="main-content">
-        <!-- Page header, like the Expenses page -->
-        <div class="header">
-  <h1>Budget Tracker </h1>
-  <div>
-    <button id="refreshButton">Refresh</button>
-    <button id="logoutButton">Log Out</button>
-  </div>
-</div>
+    <!-- ===== MAIN CONTENT (matches dashboard layout) ===== -->
+    <main class="dashboard-content">
+      <!-- Header -->
+      <div class="header">
+        <h1>Budget Tracker</h1>
+        <div>
+          <button id="refreshButton">Refresh</button>
+          <button id="logoutButton">Log Out</button>
+        </div>
+      </div>
 
-        <main class="dashboard">
-          <!-- LEFT HALF (2x2 GRID) -->
-          <section class="left-grid">
-            <!-- Top Left: Budget Setup -->
-            <div id="budget-setup" class="card">
-              <h2>Set Your Budget</h2>
+      <!-- Budget layout -->
+      <main class="dashboard">
+        <!-- LEFT HALF (2x2 GRID) -->
+        <section class="left-grid">
+          <!-- Top Left: Budget Setup -->
+          <div id="budget-setup" class="card">
+            <h2>Set Your Budget</h2>
 
-              <form id="budgetForm">
-                <!-- CATEGORY -->
-                <label for="category-select">Category</label>
-                <select id="category-select" class="input-field" required>
-                  <option value="" disabled selected>Select category</option>
-                  <option value="Rent">Rent</option>
-                  <option value="Utilities">Utilities</option>
-                  <option value="Food/Groceries">Food/Groceries</option>
-                  <option value="Transportation">Transportation</option>
-                  <option value="Other">Other</option>
-                  <option value="custom">Custom…</option>
+            <form id="budgetForm">
+              <label for="category-select">Category</label>
+              <select id="category-select" class="input-field" required>
+                <option value="" disabled selected>Select category</option>
+                <option value="Rent">Rent</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Food/Groceries">Food/Groceries</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Savings">Savings</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <input
+                type="text"
+                id="category-custom"
+                class="input-field"
+                placeholder="Enter custom category"
+                style="display:none;"
+              />
+
+              <label for="budget-amount" style="margin-top:12px;"
+                >Budget Amount ($)</label
+              >
+              <input type="text" id="budget-amount" class="input-field" />
+
+              <button type="submit" class="btn-primary">Add Budget</button>
+            </form>
+          </div>
+
+          <!-- Top Right: Add Income / Expense -->
+          <div id="transactions" class="card">
+            <h2>Add Income or Expense</h2>
+            <form id="transactionForm">
+              <div class="input-group">
+                <label for="type">Type</label>
+                <select id="type" required>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
                 </select>
+              </div>
 
-                <!-- Custom text input (hidden by default) -->
+              <div class="input-group">
+                <label for="amount">Amount ($)</label>
+                <input
+                  type="number"
+                  id="amount"
+                  step="0.01"
+                  min="0"
+                  required
+                />
+              </div>
+
+              <div class="input-group">
+                <label for="trans-category">Category</label>
                 <input
                   type="text"
-                  id="category-custom"
-                  class="input-field"
-                  placeholder="Enter custom category"
-                  style="display:none;"
+                  id="trans-category"
+                  list="expenseCategories"
+                  placeholder="Start typing to search..."
+                  required
                 />
-
-                <!-- BUDGET AMOUNT -->
-                <label for="budget-amount" style="margin-top:12px;"
-                  >Budget Amount ($)</label
-                >
-                <input type="text" id="budget-amount" class="input-field" />
-
-                <button type="submit" class="btn-primary">Add Budget</button>
-              </form>
-            </div>
-
-            <!-- Top Right: Add Income / Expense -->
-            <div id="transactions" class="card">
-              <h2>Add Income or Expense</h2>
-              <form id="transactionForm">
-                <div class="input-group">
-                  <label for="type">Type</label>
-                  <select id="type" required>
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                  </select>
-                </div>
-
-                <div class="input-group">
-                  <label for="trans-category">Category</label>
-                  <input
-                    type="text"
-                    id="trans-category"
-                    list="expenseCategories"
-                    placeholder="e.g. Rent"
-                    autocomplete="off"
-                    required
-                  />
-                </div>
-
-                <div class="input-group">
-                  <label for="amount">Amount ($)</label>
-                  <input
-                    type="text"
-                    id="amount"
-                    class="money-input"
-                    inputmode="decimal"
-                    autocomplete="off"
-                    required
-                  />
-                </div>
-
-                <button type="submit">Add Transaction</button>
-              </form>
-            </div>
-
-            <!-- Shared datalist for suggested categories (same as Expense page) -->
-            <datalist id="expenseCategories">
-              <option value="Food/Groceries"></option>
-              <option value="Rent"></option>
-              <option value="Utilities"></option>
-              <option value="Entertainment"></option>
-              <option value="Transportation"></option>
-              <option value="Health"></option>
-              <option value="Other"></option>
-            </datalist>
-
-            <!-- Bottom Left: Transaction Log -->
-            <div id="log" class="card">
-              <h2>Transaction Log</h2>
-              <ul id="transaction-list"></ul>
-            </div>
-
-            <!-- Bottom Right: Budget Summary -->
-            <div id="summary" class="card">
-              <h2>Budget Summary</h2>
-              <div class="summary-item">
-                <p>Total Income:</p> <span id="total-income">$0.00</span>
+                <datalist id="expenseCategories">
+                  <option value="Rent"></option>
+                  <option value="Utilities"></option>
+                  <option value="Food/Groceries"></option>
+                  <option value="Transportation"></option>
+                  <option value="Entertainment"></option>
+                  <option value="Savings"></option>
+                  <option value="Other"></option>
+                </datalist>
               </div>
-              <div class="summary-item">
-                <p>Total Expenses:</p> <span id="total-expenses">$0.00</span>
-              </div>
-              <div class="summary-item">
-                <p>Remaining Balance:</p>
-                <span id="remaining-balance">$0.00</span>
-              </div>
+
+              <button type="submit" class="btn-primary">
+                Add Transaction
+              </button>
+            </form>
+          </div>
+
+          <!-- Bottom Left: Transaction Log -->
+          <div id="log" class="card">
+            <h2>Transaction Log</h2>
+            <ul id="transaction-list"></ul>
+          </div>
+
+          <!-- Bottom Right: Budget Summary -->
+          <div id="summary" class="card">
+            <h2>Budget Summary</h2>
+            <div class="summary-item">
+              <p>Total Income:</p>
+              <span id="total-income">$0.00</span>
             </div>
-          </section>
+            <div class="summary-item">
+              <p>Total Expenses:</p>
+              <span id="total-expenses">$0.00</span>
+            </div>
+            <div class="summary-item">
+              <p>Remaining Balance:</p>
+              <span id="remaining-balance">$0.00</span>
+            </div>
+          </div>
+        </section>
 
-          <!-- RIGHT HALF (Pie Chart) -->
-          <section id="spending-visual" class="card">
-            <h2>Spending by Category</h2>
-            <p class="subtitle">
-              Visual breakdown of your spending and budget allocation.
-            </p>
-            <canvas id="spendingChart"></canvas>
-          </section>
-        </main>
-      </div>
-      <!-- end .main-content -->
-    </div>
-    <!-- end .app-layout -->
+        <!-- RIGHT HALF (Pie Chart) -->
+        <section id="spending-visual" class="card">
+          <h2>Spending by Category</h2>
+          <p class="subtitle">
+            Visual breakdown of your spending and budget allocation.
+          </p>
+          <canvas id="spendingChart"></canvas>
+        </section>
+      </main>
+    </main>
 
-    <!-- Important: budget.js is in /public/js -->
     <script defer src="js/budget.js"></script>
+
+    <!-- Sidebar highlighting + Logout + Refresh -->
     <script>
-  (function () {
-    const path = location.pathname;
-    const map = {
-      '/dashboard': 'dashboard',
-      '/income': 'income',
-      '/expense': 'expense',
-      '/budget-tracker': 'budget-tracker',
-      '/report': 'report',
-    };
+      (function () {
+        const path = location.pathname;
+        const map = {
+          "/dashboard": "dashboard",
+          "/income": "income",
+          "/expense": "expense",
+          "/budget-tracker": "budget-tracker",
+          "/report": "report",
+        };
 
-    const key = map[path];
-    if (key) {
-      document
-        .querySelector(`.menu .menu-item[data-link="${key}"]`)
-        ?.classList.add('nav-active');
-    }
+        const key = map[path];
+        if (key) {
+          document
+            .querySelector('.menu .menu-item[data-link="' + key + '"]')
+            ?.classList.add("nav-active");
+        }
 
-    // Sidebar logout
-    document.getElementById('logoutLink')?.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('jwtToken');
-      location.href = '/';
-    });
+        // Sidebar logout
+        document.getElementById("logoutLink")?.addEventListener("click", () => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("jwtToken");
+          location.href = "/";
+        });
 
-    // Top-right logout button
-    document.getElementById('logoutButton')?.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('jwtToken');
-      location.href = '/';
-    });
+        // Top-right logout
+        document
+          .getElementById("logoutButton")
+          ?.addEventListener("click", () => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("jwtToken");
+            location.href = "/";
+          });
 
-    // Refresh button (reloads the page)
-    document.getElementById('refreshButton')?.addEventListener('click', () => {
-      location.reload();
-    });
-  })();
-</script>
+        // Refresh button
+        document
+          .getElementById("refreshButton")
+          ?.addEventListener("click", () => location.reload());
+      })();
+    </script>
   </body>
 </html>
