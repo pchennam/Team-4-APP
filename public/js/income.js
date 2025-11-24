@@ -159,7 +159,7 @@ function renderTable(rows) {
     </tr></thead>`;
 
   const body = rows.map(r => `
-    <tr data-id="${r.id}">
+   <tr data-id="${r.id || r.income_id || r.incomeId}">
       <td>${formatTableDate(r.date)}</td>
       <td>${r.source}</td>
       <td style="text-transform:capitalize">${r.cadence || ''}</td>
@@ -176,25 +176,47 @@ function renderTable(rows) {
 
   // Edit
   wrap.querySelectorAll('.editBtn').forEach(b => b.onclick = (e) => {
-    const tr = e.target.closest('tr'); const id = tr.dataset.id;
-    const row = incomeRowsCache.find(x => String(x.id) === id); if (!row) return;
-    $('#incomeId').value = row.id;
+    const tr = e.target.closest('tr');
+    const id = tr.dataset.id;
+    const row = incomeRowsCache.find(x => String(x.id || x.income_id || x.incomeId) === id);
+    if (!row) return;
+    $('#incomeId').value = row.id || row.income_id || row.incomeId;
     $('#dateInput').value = row.date;
     const radios = document.querySelectorAll('input[name="source"]');
-    let ok = false; radios.forEach(r => { if (r.value.toLowerCase() === String(row.source||'').toLowerCase()) { r.checked = true; ok = true; }});
+    let ok = false;
+    radios.forEach(r => {
+      if (r.value.toLowerCase() === String(row.source || '').toLowerCase()) {
+        r.checked = true;
+        ok = true;
+      }
+    });
     if (!ok) document.querySelector('input[name="source"][value="Other"]')?.setAttribute('checked', true);
     $('#amountInput').value = currencyFmt.format(Number(row.amount) || 0);
     $('#cadenceInput').value = row.cadence || 'monthly';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  // Delete
+  // Delete (Improved with logging)
   wrap.querySelectorAll('.delBtn').forEach(b => b.onclick = async (e) => {
-    const id = e.target.closest('tr').dataset.id;
+    const tr = e.target.closest('tr');
+    const id = tr?.dataset.id;
+
+    console.log('Income delete clicked. Row ID =', id);
+
+    if (!id) {
+      alert('Error: No ID found for this income row. Check data-id in renderTable().');
+      return;
+    }
+
     if (confirm('Delete this entry?')) {
-      await deleteIncome(id);
-      localStorage.setItem('refreshDashboard', 'true');
-      await load();
+      try {
+        await deleteIncome(id);
+        localStorage.setItem('refreshDashboard', 'true');
+        await load();
+      } catch (err) {
+        console.error('❌ Income delete failed:', err);
+        alert('Error deleting income. See console for details.');
+      }
     }
   });
 }

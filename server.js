@@ -178,6 +178,43 @@ app.post("/api/income", authenticateToken, async (req, res) => {
   }
 });
 
+app.patch("/api/income/:id", authenticateToken, async (req, res) => {
+  const id = req.params.id;
+  const { source, amount, date, description = null, cadence = "monthly" } = req.body;
+
+  try {
+    const conn = await createConnection();
+    await conn.execute(
+      `UPDATE income 
+       SET source=?, description=?, amount=?, date=?, cadence=? 
+       WHERE id=? AND user_email=?`,
+      [source, description, Number(amount), date, cadence, id, req.user.email]
+    );
+    await conn.end();
+    res.json({ message: "Income updated successfully" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error updating income." });
+  }
+});
+
+app.delete("/api/income/:id", authenticateToken, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const conn = await createConnection();
+    await conn.execute(
+      "DELETE FROM income WHERE id=? AND user_email=?",
+      [id, req.user.email]
+    );
+    await conn.end();
+    res.status(204).send();
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error deleting income." });
+  }
+});
+
 // ===============================================================
 // EXPENSE ROUTES
 // ===============================================================
@@ -212,6 +249,43 @@ app.post("/api/expense", authenticateToken, async (req, res) => {
     res.status(201).json({ id: r.insertId });
   } catch (e) {
     res.status(500).json({ message: "Error creating expense." });
+  }
+});
+
+app.patch("/api/expense/:id", authenticateToken, async (req, res) => {
+  const id = req.params.id;
+  const { category, amount, date, description = null, cadence = "monthly" } = req.body;
+
+  try {
+    const conn = await createConnection();
+    await conn.execute(
+      `UPDATE expense 
+       SET category=?, description=?, amount=?, date=?, cadence=? 
+       WHERE id=? AND user_email=?`,
+      [category, description, Number(amount), date, cadence, id, req.user.email]
+    );
+    await conn.end();
+    res.json({ message: "Expense updated successfully" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error updating expense." });
+  }
+});
+
+app.delete("/api/expense/:id", authenticateToken, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const conn = await createConnection();
+    await conn.execute(
+      "DELETE FROM expense WHERE id=? AND user_email=?",
+      [id, req.user.email]
+    );
+    await conn.end();
+    res.status(204).send();
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error deleting expense." });
   }
 });
 

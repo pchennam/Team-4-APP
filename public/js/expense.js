@@ -66,7 +66,9 @@ async function updateExpense(id, body) {
   if (!r.ok) throw new Error('update failed');
 }
 async function deleteExpense(id) {
-  const r = await fetch('/api/expense/' + id, { method: 'DELETE', headers: { ...auth() } });
+  const r = await fetch('/api/expense/' + id, {
+    method: 'DELETE', headers: { ...auth() }
+  });
   if (r.status === 401) return logout();
   if (!r.ok) throw new Error('delete failed');
 }
@@ -153,7 +155,7 @@ function renderTable(rows) {
     </thead>`;
 
   const body = rows.map(r => `
-    <tr data-id="${r.id}">
+    <tr data-id="${r.id || r.expense_id || r.expenseId}">
       <td>${formatTableDate(r.date)}</td>
       <td>${r.category}</td>
       <td style="text-transform:capitalize">${r.cadence || ''}</td>
@@ -170,9 +172,11 @@ function renderTable(rows) {
 
   // Edit
   wrap.querySelectorAll('.editBtn').forEach(b => b.onclick = (e) => {
-    const tr = e.target.closest('tr'); const id = tr.dataset.id;
-    const row = expenseRowsCache.find(x => String(x.id) === id); if (!row) return;
-    $('#expenseId').value = row.id;
+    const tr = e.target.closest('tr');
+    const id = tr.dataset.id;
+    const row = expenseRowsCache.find(x => String(x.id || x.expense_id || x.expenseId) === id);
+    if (!row) return;
+    $('#expenseId').value = row.id || row.expense_id || row.expenseId;
     $('#expenseDate').value = row.date;
     const radios = document.querySelectorAll('input[name="category"]');
     let matched = false;
@@ -185,13 +189,29 @@ function renderTable(rows) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  // Delete
+  // Delete (Improved with logging)
   wrap.querySelectorAll('.delBtn').forEach(b => b.onclick = async (e) => {
-    const id = e.target.closest('tr').dataset.id;
-    if (confirm('Delete this expense?')) {
-      await deleteExpense(id);
-      localStorage.setItem('refreshDashboard','true');
-      await load();
+    const tr = e.target.closest('tr');
+    const id = tr?.dataset.id;
+
+    console.log("Delete button clicked. Row ID =", id);
+
+    if (!id) {
+      alert("Error: No ID found for this row. Your renderTable() might be using the wrong field name (id vs expense_id).");
+      return;
+    }
+
+    if (confirm("Delete this expense?")) {
+      try {
+        const result = await deleteExpense(id);
+        console.log("Delete API result:", result);
+
+        localStorage.setItem("refreshDashboard", "true");
+        await load();
+      } catch (err) {
+        console.error("❌ Delete failed:", err);
+        alert("Delete failed. See console for details.");
+      }
     }
   });
 }
