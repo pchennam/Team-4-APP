@@ -109,6 +109,7 @@
                 <option value="Entertainment">Entertainment</option>
                 <option value="Savings">Savings</option>
                 <option value="Other">Other</option>
+                <option value="custom">Custom</option>
               </select>
 
               <input
@@ -143,13 +144,13 @@
               <div class="input-group">
                 <label for="amount">Amount ($)</label>
                 <input
-                  type="number"
-                  id="amount"
-                  step="0.01"
-                  min="0"
-                  required
+                type="text"
+                id="amount"
+                class="input-field"
+                required
                 />
               </div>
+
 
               <div class="input-group">
                 <label for="trans-category">Category</label>
@@ -184,21 +185,39 @@
           </div>
 
           <!-- Bottom Right: Budget Summary -->
-          <div id="summary" class="card">
-            <h2>Budget Summary</h2>
-            <div class="summary-item">
-              <p>Total Income:</p>
-              <span id="total-income">$0.00</span>
+           <div id="summary" class="card budget-summary-card">
+            <div class="summary-header">
+              <h2>Budget Summary</h2>
+              <p class="summary-subtitle">Quick snapshot</p>
             </div>
-            <div class="summary-item">
-              <p>Total Expenses:</p>
-              <span id="total-expenses">$0.00</span>
-            </div>
-            <div class="summary-item">
-              <p>Remaining Balance:</p>
-              <span id="remaining-balance">$0.00</span>
-            </div>
-          </div>
+            
+            <div class="summary-body">
+              <div class="summary-item">
+                <div class="summary-label">
+                  <span class="summary-tag income-tag">Income</span>
+                  <p>Total Income</p>
+                </div>
+                <span class="summary-value" id="total-income">$0.00</span>
+              </div>
+
+    <div class="summary-item">
+      <div class="summary-label">
+        <span class="summary-tag expense-tag">Expenses</span>
+        <p>Total Expenses</p>
+      </div>
+      <span class="summary-value" id="total-expenses">$0.00</span>
+    </div>
+
+    <div class="summary-item balance-row">
+      <div class="summary-label">
+        <span class="summary-tag balance-tag">Balance</span>
+        <p>Remaining Balance</p>
+      </div>
+      <span class="summary-value" id="remaining-balance">$0.00</span>
+    </div>
+  </div>
+</div>
+
         </section>
 
         <!-- RIGHT HALF (Pie Chart) -->

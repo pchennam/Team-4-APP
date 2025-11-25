@@ -70,6 +70,23 @@
   box-shadow: 0 0 0 2px rgba(0, 158, 115, 0.15);
 }
 
+/* Make Add Income/Expense labels sit cleanly above inputs */
+#transactions .input-group {
+  display: flex;
+  flex-direction: column;   /* stack label over field */
+  gap: 4px;
+}
+
+#transactions .input-group label {
+  margin-bottom: 2px;
+}
+
+/* Make fields line up nicely with full width */
+#transactions .input-group input,
+#transactions .input-group select {
+  width: 100%;
+}
+
 /* =======================================
    TRANSACTION LOG
    ======================================= */
@@ -111,21 +128,113 @@
    BUDGET SUMMARY
    ======================================= */
 
+#summary.budget-summary-card {
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #f9fafb, #eef2ff);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+#summary .summary-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+#summary .summary-header h2 {
+  font-size: 0.85rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+#summary .summary-subtitle {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+#summary .summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 #summary .summary-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  font-size: 14px;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
 }
 
-#summary .summary-item p {
-  color: #555;
+#summary .summary-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
-#summary .summary-item span {
+#summary .summary-label p {
+  margin: 0;
+  font-size: 0.9rem;
   font-weight: 600;
+  color: #111827;
 }
+
+#summary .summary-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+#summary .income-tag {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+#summary .expense-tag {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+#summary .balance-tag {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+#summary .summary-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+#summary .balance-row .summary-value {
+  font-size: 1.05rem;
+}
+
+/* Card background – make it white */
+#summary.budget-summary-card {
+  padding: 1.25rem 1.5rem;
+  background: #ffffff;               /* <-- change from gradient to white */
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+/* Inner rows – make them gray */
+#summary .summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: #f3f4f6;               /* <-- change from #ffffff to this gray */
+}
+
 
 /* =======================================
    SPENDING CHART
