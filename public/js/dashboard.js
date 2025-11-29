@@ -93,6 +93,17 @@ function renderIncomeChart(rows) {
       ],
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: false, // so it respects your CSS height
+      plugins: {
+        legend: {
+          position: "bottom",     // 👈 move legend block to the bottom
+          labels: {
+            usePointStyle: true,  // small dot instead of huge box
+            padding: 16,
+          },
+        },
+      },
       scales: {
         y: {
           beginAtZero: true,
@@ -105,7 +116,7 @@ function renderIncomeChart(rows) {
   });
 }
 
-// // ---------------- EXPENSE CATEGORY DOUGHNUT ----------------
+// // ---------------- EXPENSE CATEGORY DOUGHNUT (OLD VERSION, KEPT FOR REFERENCE) ----------------
 // let categoryChart = null;
 // function setupCategoryChart(rows) {
 //   const ctx = document.getElementById("categoryChart")?.getContext("2d");
@@ -134,7 +145,9 @@ function renderIncomeChart(rows) {
 // ---------------- BUDGET VS ACTUAL ----------------
 let barChart = null;
 function setupBudgetVsActualChart(budgets, expenses) {
-  const ctx = document.getElementById("budgetVsActualChart")?.getContext("2d");
+  const ctx = document
+    .getElementById("budgetVsActualChart")
+    ?.getContext("2d");
   if (!ctx) return;
 
   if (barChart) barChart.destroy();
@@ -165,16 +178,21 @@ function setupBudgetVsActualChart(budgets, expenses) {
           data: budgetVals,
           backgroundColor: "#00A878CC",
           borderColor: "#00A878",
-          borderWidth: 2,
-          barThickness: 30,
+          borderWidth: 1.5,
+          // slimmer & spaced bars
+          categoryPercentage: 0.7,
+          barPercentage: 0.5,
+          borderRadius: 4,
         },
         {
           label: "Actual",
           data: actualVals,
           backgroundColor: "#F75C03CC",
           borderColor: "#F75C03",
-          borderWidth: 2,
-          barThickness: 30,
+          borderWidth: 1.5,
+          categoryPercentage: 0.7,
+          barPercentage: 0.4,
+          borderRadius: 4,
         },
       ],
     },
@@ -182,7 +200,13 @@ function setupBudgetVsActualChart(budgets, expenses) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: "bottom" },
+        legend: {
+          position: "bottom",
+          labels: {
+            usePointStyle: true,   // 👈 small circle/point instead of big box
+            padding: 16,
+          },
+        },
         tooltip: {
           callbacks: {
             label: (ctx) =>
@@ -196,13 +220,22 @@ function setupBudgetVsActualChart(budgets, expenses) {
           ticks: { callback: (v) => currencyFmt.format(v) },
         },
         x: {
-          ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 },
+          ticks: {
+            autoSkip: false,
+            maxRotation: 45,
+            minRotation: 45,
+          },
+          grid: {
+            display: false,
+          },
         },
       },
     },
+
   });
 }
-// ---------------- EXPENSE CATEGORY DOUGHNUT ----------------
+
+// ---------------- EXPENSE CATEGORY DOUGHNUT (UNIQUE COLORS) ----------------
 let categoryChart = null;
 function setupCategoryChart(rows) {
   const ctx = document.getElementById("categoryChart")?.getContext("2d");
@@ -212,8 +245,22 @@ function setupCategoryChart(rows) {
 
   const labels = rows.map((r) => r.category);
   const values = rows.map((r) => Number(r.total));
-
   const total = values.reduce((a, b) => a + b, 0);
+
+  // One unique color per category (7 here, you can tweak shades)
+  const colorPalette = [
+    "#00A878", // Rent        - green
+    "#2563EB", // Other       - blue
+    "#F97316", // Utilities   - orange
+    "#A855F7", // Food/Groceries - purple
+    "#EAB308", // Personal    - yellow
+    "#0EA5E9", // Beauty      - teal
+    "#EC4899", // Pet         - pink
+  ];
+
+  const sliceColors = labels.map(
+    (_, idx) => colorPalette[idx % colorPalette.length]
+  );
 
   categoryChart = new Chart(ctx, {
     type: "doughnut",
@@ -222,7 +269,7 @@ function setupCategoryChart(rows) {
       datasets: [
         {
           data: values,
-          backgroundColor: ["#00A878", "#2274A5", "#F75C03", "#8C4F7F", "#FFB400"],
+          backgroundColor: sliceColors,
           hoverOffset: 12,
         },
       ],
@@ -230,8 +277,6 @@ function setupCategoryChart(rows) {
     options: {
       plugins: {
         legend: { position: "right" },
-
-        // ⭐ ADD TOOLTIP FORMATTER HERE ⭐
         tooltip: {
           callbacks: {
             label: function (context) {
@@ -241,7 +286,7 @@ function setupCategoryChart(rows) {
 
               return [
                 `${category}: ${currencyFmt.format(amount)}`,
-                `${pct}% of total`
+                `${pct}% of total`,
               ];
             },
           },
@@ -250,6 +295,7 @@ function setupCategoryChart(rows) {
     },
   });
 }
+
 
 // ---------------- INIT ----------------
 document.addEventListener("DOMContentLoaded", () => {

@@ -91,10 +91,13 @@ button:hover { background-color: #009e73; }
 .chart-placeholder { height: 240px; }
 
 /* Give extra space between "Monthly Income Trend" title and its chart */
+/* Give extra space + taller area for "Monthly Income Trend" */
 #incomeChart {
-  display: block;         /* ensures margin works reliably */
+  display: block;
   margin-top: 20px !important;
+  height: 300px !important;   /* <— bump this up if you want it even taller */
 }
+
 
 /* ========== Tables (shared) ========== */
 .table-wrap { overflow-x: auto; border-radius: 12px; }
@@ -278,5 +281,5 @@ button:hover { background-color: #009e73; }
   margin-top: 6px;
 }
 #budgetVsActualChart {
-  height: 260px !important;
+  height: 320px !important;
 }
